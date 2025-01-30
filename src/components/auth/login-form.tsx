@@ -6,16 +6,65 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useRouter } from "next/navigation"; // useRouter import 추가
+import { useLogin } from "@/app/hooks/useLogin";
 
 export function LoginForm() {
+  const router = useRouter();
   const [isLoginTab, setIsLoginTab] = useState(true);
-  const router = useRouter(); // router 추가
+  const [formData, setFormData] = useState({
+    email: "",
+    password: "",
+  });
+  const [error, setError] = useState("");
 
   const handleTabChange = (isLogin: boolean) => {
     if (isLogin) {
       setIsLoginTab(true);
     } else {
       router.push("/register");
+    }
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+
+    // 테스트용 로그인 검증
+    if (
+      formData.email === "test@gmail.com" &&
+      formData.password === "12345678"
+    ) {
+      // JWT 토큰 모사
+      const mockToken = btoa(
+        JSON.stringify({
+          id: 1,
+          email: formData.email,
+          exp: new Date().getTime() + 60 * 60 * 1000, // 1시간 유효
+        })
+      );
+
+      // 토큰 저장
+      localStorage.setItem("token", mockToken);
+      localStorage.setItem(
+        "user",
+        JSON.stringify({
+          email: formData.email,
+          name: "테스트 유저",
+        })
+      );
+
+      // 대시보드로 이동
+      router.push("/dashboard");
+    } else {
+      setError("이메일 또는 비밀번호가 올바르지 않습니다.");
     }
   };
 
@@ -55,7 +104,7 @@ export function LoginForm() {
         {/* 폼 영역 */}
         <div className="p-8">
           {isLoginTab ? (
-            <form className="space-y-6">
+            <form className="space-y-6" onSubmit={handleSubmit}>
               <div className="space-y-4">
                 <div>
                   <label className="text-[14px] text-gray-600 mb-1 block">
@@ -63,8 +112,11 @@ export function LoginForm() {
                   </label>
                   <Input
                     type="email"
+                    name="email"
                     placeholder="example@email.com"
                     className="w-full h-[46px] text-[14px]"
+                    value={formData.email}
+                    onChange={handleChange}
                   />
                 </div>
                 <div>
@@ -73,8 +125,11 @@ export function LoginForm() {
                   </label>
                   <Input
                     type="password"
+                    name="password"
                     placeholder="••••••"
                     className="w-full h-[46px] text-[14px]"
+                    value={formData.password}
+                    onChange={handleChange}
                   />
                 </div>
               </div>
@@ -96,6 +151,12 @@ export function LoginForm() {
                   비밀번호 찾기
                 </Link>
               </div>
+
+              {error && (
+                <div className="text-red-500 text-[14px] text-center">
+                  {error}
+                </div>
+              )}
 
               <Button
                 type="submit"
